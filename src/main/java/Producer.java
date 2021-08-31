@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Producer extends Thread {
 
@@ -7,14 +8,14 @@ public class Producer extends Thread {
 
     private List<Car> availableCars = new ArrayList<>();
 
-    private volatile int waitingCustomers = 0;
+    private AtomicInteger waitingCustomers = new AtomicInteger(0);
 
     public List<Car> getAvailableCars() {
         return availableCars;
     }
 
     public void createCar() {
-        while (waitingCustomers != 0){
+        while (waitingCustomers.get() != 0){
         try {
             System.out.println("Машин для продажи нет. Запускаю производство.");
             Thread.sleep(TIME_CREATE);
@@ -29,19 +30,19 @@ public class Producer extends Thread {
     }}
 
     public void sellCar() {
-        ++waitingCustomers;
+        waitingCustomers.getAndIncrement();
         try {
+            synchronized (this) {
             while (availableCars.size() == 0) {
-                synchronized (this) {
                     System.out.printf("Поток %s хотел купить автомобиль. Авто в продаже нет.\n", Thread.currentThread().getName());
                     wait();
+                    waitingCustomers.getAndDecrement();
                 }
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         System.out.printf("Поток %s купил машину\n", Thread.currentThread().getName());
-        --waitingCustomers;
         availableCars.remove(0);
     }
 }
