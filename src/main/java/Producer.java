@@ -1,48 +1,51 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Producer extends Thread {
 
-    private final int TIME_CREATE = 1000;
+    private final int TIME_CREATE = 2000;
 
-    private List<Car> availableCars = new ArrayList<>();
+    private AtomicInteger availableCars = new AtomicInteger(0);
 
     private AtomicInteger waitingCustomers = new AtomicInteger(0);
 
-    public List<Car> getAvailableCars() {
-        return availableCars;
-    }
-
     public void createCar() {
-        while (waitingCustomers.get() != 0){
-        try {
-            System.out.println("Машин для продажи нет. Запускаю производство.");
-            Thread.sleep(TIME_CREATE);
-            System.out.println("Авто готово к продаже.");
-            synchronized (this){
-            availableCars.add(new Car());
-            notify();
+            try {
+                System.out.printf("Собираю автомобиль для %s\n", Thread.currentThread().getName());
+                sleep(TIME_CREATE);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            synchronized (this) {
+                availableCars.incrementAndGet();
+                notify();
+                Thread.currentThread().interrupt();
+            }
         }
-    }}
 
     public void sellCar() {
-        waitingCustomers.getAndIncrement();
-        try {
+
+        boolean isBuy = false;
+
+        waitingCustomers.incrementAndGet();
+        System.out.printf("Поток %s хочет купить автомобиль\n", Thread.currentThread().getName());
+        while (!isBuy) {
+                System.out.println("Автомобилей в наличии нет");
+                new Thread(this::createCar).start();
             synchronized (this) {
-            while (availableCars.size() == 0) {
-                    System.out.printf("Поток %s хотел купить автомобиль. Авто в продаже нет.\n", Thread.currentThread().getName());
+                try {
                     wait();
-                    waitingCustomers.getAndDecrement();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
+                waitingCustomers.getAndDecrement();
+                availableCars.getAndDecrement();
+                System.out.printf("Поток %s купил автомобиль\n", Thread.currentThread().getName());
+                isBuy = true;
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
-        System.out.printf("Поток %s купил машину\n", Thread.currentThread().getName());
-        availableCars.remove(0);
     }
+
 }
