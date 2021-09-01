@@ -4,7 +4,7 @@ public class Main {
         ThreadGroup customerGroup = new ThreadGroup("Customers");
         ThreadGroup salesGroup = new ThreadGroup("Sellers");
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 2; i++) {
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {

@@ -33,7 +33,7 @@ public class Producer extends Thread {
         System.out.printf("Поток %s хочет купить автомобиль\n", Thread.currentThread().getName());
         while (!isBuy) {
                 System.out.println("Автомобилей в наличии нет");
-                new Thread(this::createCar).start();
+                new Thread(this::createCar, Thread.currentThread().getName()).start();
             synchronized (this) {
                 try {
                     wait();
