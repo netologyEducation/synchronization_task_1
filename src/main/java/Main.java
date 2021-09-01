@@ -4,12 +4,12 @@ public class Main {
         ThreadGroup customerGroup = new ThreadGroup("Customers");
         ThreadGroup salesGroup = new ThreadGroup("Sellers");
 
-        for (int i = 0; i < 10; i++) {
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
+        for (int i = 0; i < 100; i++) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             new Thread(customerGroup, producer::sellCar, "Customer-" + i).start();
         }
 
