@@ -1,38 +1,46 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class Producer extends Thread {
 
-    private final int TIME_CREATE = 2000;
+    private final int TIME_CREATE = 1000;
 
-    public void createCar() {
-        try {
-            System.out.printf("Собираю автомобиль для %s\n", Thread.currentThread().getName());
-            sleep(TIME_CREATE);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        synchronized (this) {
-            notify();
-            Thread.currentThread().interrupt();
+    private List<Car> availableCars = new ArrayList<>();
+
+    AtomicInteger customersWaiting = new AtomicInteger(0);
+
+    public synchronized void createCar() {
+
+        while (customersWaiting.get() != 0) {
+            try {
+                Thread.sleep(TIME_CREATE);
+                availableCars.add(new Car());
+                notifyAll();
+                customersWaiting.getAndDecrement();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
     public void sellCar() {
 
-        boolean isBuy = false;
-
         System.out.printf("Поток %s хочет купить автомобиль\n", Thread.currentThread().getName());
-        while (!isBuy) {
-            System.out.println("Автомобилей в наличии нет");
-            new Thread(this::createCar, Thread.currentThread().getName()).start();
-            synchronized (this) {
-                try {
+        customersWaiting.getAndIncrement();
+        synchronized (this) {
+            try {
+                while (availableCars.isEmpty()) {
+                    System.out.println("Автомобилей в наличии нет");
                     wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
+                availableCars.remove(0);
                 System.out.printf("Поток %s купил автомобиль\n", Thread.currentThread().getName());
-                isBuy = true;
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
-
 }
